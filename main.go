@@ -1,27 +1,35 @@
 package main
 
-import "github.com/statsd/system/pkg/collector"
-import "github.com/statsd/system/pkg/memory"
-import "github.com/statsd/client-namespace"
-import "github.com/statsd/system/pkg/disk"
-import "github.com/statsd/system/pkg/cpu"
-import . "github.com/tj/go-gracefully"
-import "github.com/segmentio/go-log"
-import "github.com/statsd/client"
-import "github.com/tj/docopt"
-import "time"
-import "os"
+import (
+	"github.com/segmentio/go-log"
+	"github.com/thechriswalker/system-stats/pkg/collector"
+	"github.com/thechriswalker/system-stats/pkg/cpu"
+	"github.com/thechriswalker/system-stats/pkg/disk"
+	"github.com/thechriswalker/system-stats/pkg/memory"
 
-const Version = "0.2.0"
+	"os"
+	"time"
 
+	statsd "github.com/statsd/client"
+	namespace "github.com/statsd/client-namespace"
+	. "github.com/tj/go-gracefully"
+
+	"github.com/tj/docopt"
+)
+
+// Version of this app
+const Version = "0.3.0"
+
+// Usage information
 const Usage = `
   Usage:
     system-stats
       [--statsd-address addr]
       [--memory-interval i]
+      [--memory-extended]
       [--disk-interval i]
       [--cpu-interval i]
-      [--extended]
+      [--cpu-extended]
       [--name name]
     system-stats -h | --help
     system-stats --version
@@ -29,9 +37,10 @@ const Usage = `
   Options:
     --statsd-address addr   statsd address [default: :8125]
     --memory-interval i     memory reporting interval [default: 10s]
+    --memory-extended       output additional extended memory metrics
     --disk-interval i       disk reporting interval [default: 30s]
     --cpu-interval i        cpu reporting interval [default: 5s]
-    --extended              output additional extended metrics
+    --cpu-extended          output additional extended CPU metrics
     --name name             node name defaulting to hostname [default: hostname]
     -h, --help              output help information
     -v, --version           output version
@@ -46,8 +55,6 @@ func main() {
 	client, err := statsd.Dial(args["--statsd-address"].(string))
 	log.Check(err)
 
-	extended := args["--extended"].(bool)
-
 	name := args["--name"].(string)
 	if "hostname" == name {
 		host, err := os.Hostname()
@@ -56,16 +63,30 @@ func main() {
 	}
 
 	c := collector.New(namespace.New(client, name))
-	c.Add(memory.New(interval(args, "--memory-interval"), extended))
-	c.Add(cpu.New(interval(args, "--cpu-interval"), extended))
-	c.Add(disk.New(interval(args, "--disk-interval")))
+	collectorCount := 0
+
+	interval := getInterval(args, "--memory-interval")
+	if interval > 0 {
+		c.Add(memory.New(interval, args["--memory-extended"].(bool)))
+		collectorCount++
+	}
+	interval = getInterval(args, "--cpu-interval")
+	if interval > 0 {
+		c.Add(cpu.New(interval, args["--cpu-extended"].(bool)))
+		collectorCount++
+	}
+	interval = getInterval(args, "--disk-interval")
+	if interval > 0 {
+		c.Add(disk.New(interval))
+		collectorCount++
+	}
 
 	c.Start()
 	Shutdown()
 	c.Stop()
 }
 
-func interval(args map[string]interface{}, name string) time.Duration {
+func getInterval(args map[string]interface{}, name string) time.Duration {
 	d, err := time.ParseDuration(args[name].(string))
 	log.Check(err)
 	return d

@@ -1,4 +1,14 @@
-//
+package disk
+
+import (
+	"time"
+
+	"github.com/c9s/goprocinfo/linux"
+	"github.com/deniswernert/go-fstab"
+	"github.com/segmentio/go-log"
+	statsd "github.com/statsd/client-interface"
+)
+
 // Disk resource.
 //
 // This collector reports on the following stat metrics:
@@ -6,16 +16,6 @@
 //  - "disk.percent" (gauge)
 //  - "disk.free" (gauge)
 //  - "disk.used" (gauge)
-//
-package disk
-
-import "github.com/statsd/client-interface"
-import "github.com/deniswernert/go-fstab"
-import "github.com/c9s/goprocinfo/linux"
-import "github.com/segmentio/go-log"
-import "time"
-
-// Disk resource.
 type Disk struct {
 	Interval time.Duration
 	client   statsd.Client

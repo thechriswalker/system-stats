@@ -1,16 +1,16 @@
-//
-// The Collector handles starting and stopping of
-// all of the resources, and flushes stats on shutdown.
-//
 package collector
 
-import "github.com/statsd/system/pkg/resource"
-import "github.com/statsd/client-namespace"
-import "github.com/statsd/client-interface"
-import "github.com/segmentio/go-log"
-import "sync"
+import (
+	"sync"
 
-// Collector.
+	"github.com/segmentio/go-log"
+	statsd "github.com/statsd/client-interface"
+	namespace "github.com/statsd/client-namespace"
+	"github.com/thechriswalker/system-stats/pkg/resource"
+)
+
+// Collector handles starting and stopping of
+// all of the resources, and flushes stats on shutdown.
 type Collector struct {
 	Resources []resource.Resource
 	client    statsd.Client

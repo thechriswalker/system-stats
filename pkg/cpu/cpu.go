@@ -1,4 +1,13 @@
-//
+package cpu
+
+import (
+	"time"
+
+	"github.com/c9s/goprocinfo/linux"
+	"github.com/segmentio/go-log"
+	statsd "github.com/statsd/client-interface"
+)
+
 // CPU resource.
 //
 // This collector reports on the following stat metrics:
@@ -8,15 +17,6 @@
 //  - "running" (counter)
 //  - "blocked" (counter)
 //  - "usage" (gauge)
-//
-package cpu
-
-import "github.com/statsd/client-interface"
-import "github.com/c9s/goprocinfo/linux"
-import "github.com/segmentio/go-log"
-import "time"
-
-// CPU resource.
 type CPU struct {
 	Path     string
 	Interval time.Duration
